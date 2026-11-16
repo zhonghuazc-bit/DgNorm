@@ -1,0 +1,42 @@
+{
+  "scope": "112 gold-bearing CSC documents, strict corpus-level micro",
+  "main": {
+    "tp": 1361,
+    "fp": 503,
+    "fn": 433,
+    "p": 0.7302,
+    "r": 0.7586,
+    "f1": 0.7441,
+    "n_docs": 112
+  },
+  "endpoint_sensitivity": {
+    "main": {
+      "p": 0.7302,
+      "r": 0.7586,
+      "f1": 0.7441,
+      "tp": 1361,
+      "fp": 503,
+      "fn": 433,
+      "n_docs": 112
+    },
+    "glm": {
+      "p": 0.6868,
+      "r": 0.7809,
+      "f1": 0.7308,
+      "tp": 1401,
+      "fp": 639,
+      "fn": 393,
+      "n_docs": 112
+    },
+    "qwen": {
+      "p": 0.6716,
+      "r": 0.757,
+      "f1": 0.7117,
+      "tp": 1358,
+      "fp": 664,
+      "fn": 436,
+      "n_docs": 112
+    }
+  },
+  "source": "zero-model-call replay of the published caches; see docs/REPRODUCE.md"
+}

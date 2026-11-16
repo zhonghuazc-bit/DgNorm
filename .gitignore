@@ -1,0 +1,15 @@
+.env
+*.env
+__pycache__/
+*.py[cod]
+*.npz
+*.xlsx
+*.zip
+*.pt
+*.bin
+*.safetensors
+data/hpo/
+data/sapbert/
+data/raghpo/
+verification/_replay/
+.venv/

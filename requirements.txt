@@ -1,0 +1,8 @@
+# Full pipeline (candidate retrieval and deterministic short-circuit).
+# The verifier in examples/ needs no third-party package at all.
+networkx>=3.0
+numpy>=1.24
+requests>=2.28
+openpyxl>=3.1
+sentence-transformers>=2.2
+torch>=2.0

@@ -1,0 +1,18 @@
+{
+  "dataset": "csc",
+  "scope": "112 gold-bearing documents of the RAG-HPO CSC corpus",
+  "ontology_release": "hp 2026-09-01",
+  "extraction": "two output specifications of one instruction-tuned LLM, merged as a phrase union",
+  "candidate_block_k": 20,
+  "candidate_source": "SapBERT dense index over HPO labels and synonyms",
+  "selection": "source-sentence-injected constrained choice, one code or abstain per phrase",
+  "short_circuit": "deterministic equality-family rules inside each phrase's own candidate block",
+  "metric": "strict corpus-level micro precision, recall and F1",
+  "llm_endpoint": "DeepSeek 4.1 Flash, OpenAI-compatible chat completions",
+  "locked_counts": {
+    "tp": 1361,
+    "fp": 503,
+    "fn": 433
+  },
+  "locked_f1": 0.7441
+}
