@@ -1,0 +1,11 @@
+{
+  "scope": "112 gold-bearing CSC documents",
+  "protocol": "normalized (collapsed) strict matching, per-document macro",
+  "p": 0.7606,
+  "r": 0.7499,
+  "f1": 0.749,
+  "n_docs": 112,
+  "raw_universe_codes": 1520,
+  "descendant_edges": 1939,
+  "source": "collapsed from released gold/pred sets with hp 2026-09-01 is_a"
+}

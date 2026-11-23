@@ -43,19 +43,37 @@ Set the provider key in the environment, for example
 `DEEPSEEK_API_KEY`, and pass the matching `LlmClient` configuration to
 `DgnormPipeline`. No key is stored in this repository.
 
-## Metric definition
+## Metric definitions
 
-Strict matching counts a predicted HPO code as true positive only when it
-is exactly a gold code of the same document. Precision, recall and F1 are
-computed from TP, FP and FN aggregated over all documents, then divided.
-This is corpus-level micro, not per-case macro, and it is distinct from
-the paper's folded matching and from the LEAP paper's ancestor-relaxed
-scoring. `verification/expected_metrics.json` fixes the locked counts.
+The paper reports two protocols, both recomputed by the verifier from the
+same prediction sets.
+
+**Main result (Tables 3, 4, 5): normalized strict matching, per-document
+macro.** Each document's gold and prediction sets are first normalized by
+collapsing them to their most specific codes: a code is dropped when a
+strict descendant of it is present in the same set. The collapse uses the
+hp 2026-09-01 `is_a` graph; `verification/hpo_descendants_scope.json` ships
+exactly the descendant relation restricted to codes appearing in these 112
+documents, so normalization is reproducible offline. A normalized code is a
+true positive only when it exactly equals a normalized gold code of the same
+document. Per-document precision, recall and F1 are computed and then averaged
+with equal weight over all documents. This yields the paper's CSC headline
+F1 0.7490 (P 0.7606, R 0.7499), locked in
+`verification/expected_metrics_collapsed.json`.
+
+**Release cross-check: strict matching, corpus-level micro.** Without
+normalization, a code is a true positive only when it exactly equals a gold
+code of the same document. TP, FP and FN are summed over all documents and
+then divided to give precision, recall and F1. This yields F1 0.7441
+(TP 1361, FP 503, FN 433), locked in `verification/expected_metrics.json`.
+The two protocols answer different questions and are not interchangeable;
+the verifier asserts both so the released predictions are checked against
+the headline number as well as the stricter aggregate.
 
 ## Endpoint sensitivity
 
 Table 6 of the paper reports three endpoints on the same 112 documents
-under the same strict corpus-level micro: DeepSeek 4.1 Flash 0.7441,
-GLM-5.3-Flash 0.7308, Qwen3.8-Flash 0.7117. Those runs differ only in
-the endpoint; their caches and the zero-model-call rescope are summarized
-in `verification/expected_metrics.json`.
+under strict corpus-level micro: DeepSeek 4.1 Flash 0.7441, GLM-5.3-Flash
+0.7308, Qwen3.8-Flash 0.7117. Those runs differ only in the endpoint; their
+caches and the zero-model-call rescope are summarized in
+`verification/expected_metrics.json`.

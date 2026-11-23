@@ -7,12 +7,21 @@
   "candidate_source": "SapBERT dense index over HPO labels and synonyms",
   "short_circuit": "deterministic equality-family rules inside each phrase's own candidate block; runs first and settles rule hits with no LLM call",
   "selection": "source-sentence-injected constrained choice over the remaining phrases, one code or abstain per phrase",
-  "metric": "strict corpus-level micro precision, recall and F1",
-  "llm_endpoint": "DeepSeek 4.1 Flash, OpenAI-compatible chat completions",
-  "locked_counts": {
+  "main_metric": "normalized (collapsed) strict matching, per-document macro precision, recall and F1; protocol of paper Tables 3-5",
+  "main_result": {
+    "p": 0.7606,
+    "r": 0.7499,
+    "f1": 0.7490,
+    "n_docs": 112
+  },
+  "release_cross_check": {
+    "metric": "strict exact matching, corpus-level micro precision, recall and F1",
     "tp": 1361,
     "fp": 503,
-    "fn": 433
+    "fn": 433,
+    "p": 0.7302,
+    "r": 0.7586,
+    "f1": 0.7441
   },
-  "locked_f1": 0.7441
+  "llm_endpoint": "DeepSeek 4.1 Flash, OpenAI-compatible chat completions"
 }
