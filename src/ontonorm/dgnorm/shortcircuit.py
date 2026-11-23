@@ -1,4 +1,4 @@
-"""Stage 4 of DGNorm: in-block equality-family short-circuit.
+"""DGNorm equality-family short-circuit (runs before LLM selection).
 
 Deterministic, zero-LLM. For each phrase, three equality rules are tried
 in cascade over the phrase's own SapBERT top-K block, restricted to
@@ -8,10 +8,14 @@ phrases whose index entry maps to a single hpo id:
   2. token-set equality
   3. cleaned full-string equality
 
-A hit overrides the LLM pick (or fills an abstention). Two safety design
-constraints inherited from the ablation: the match domain is the
-candidate block (never the whole library), and only the equality family
-is used (no substring/fuzzy rules, which measured harmful).
+A hit fixes the phrase's code directly and the phrase is skipped by the
+constrained selector, so no LLM call is paid for it. A miss falls through
+to selection. The final prediction is rebuilt by preds_from_selection,
+which applies the same rule map, so results are byte-identical to the
+previous post-selection override order. Two safety design constraints
+inherited from the ablation: the match domain is the candidate block
+(never the whole library), and only the equality family is used (no
+substring/fuzzy rules, which measured harmful).
 """
 from __future__ import annotations
 
@@ -78,12 +82,12 @@ class ShortCircuitTier:
     def run(
         self,
         phrases: List[str],
-        selection: Dict[str, str],
-    ) -> Tuple[Dict[str, Dict[str, str]], Dict[str, object]]:
-        """Apply short-circuit over all phrases.
+    ) -> Tuple[Dict[str, str], Dict[str, object]]:
+        """Fix codes for all phrases settled by the equality rule.
 
-        Returns (per-doc mappings, stats). Each phrase keeps its LLM pick
-        unless the short-circuit hits; a hit overrides (or fills abstention).
+        Returns (rule map, stats). A hit is passed to the selector as a
+        pre-filled pick so that phrase is skipped by both retrieval and the
+        LLM. Misses are left for constrained selection.
         """
         short: Dict[str, str] = {}
         for p in phrases:

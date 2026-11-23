@@ -5,9 +5,10 @@ Phenotype Ontology (HPO) normalization of clinical case reports. One
 instruction-tuned LLM reads each document twice under two output
 specifications, once copying the original wording and once emitting
 standard concept names; the phrase union is bounded by candidates over
-ontology surface forms; a source-sentence-injected constrained choice
-assigns one code or abstains; deterministic equality rules inside each
-phrase's own candidate block resolve cases decidable without judgment.
+ontology surface forms; deterministic equality rules inside each phrase's
+own candidate block settle every case decidable without judgment, and only
+the remaining phrases go to a source-sentence-injected constrained choice
+that assigns one code or abstains.
 
 This repository contains the SDK and the artifacts required to verify the
 published main result. It deliberately does **not** contain the full
@@ -43,7 +44,7 @@ on the same 112 documents: DeepSeek 4.1 Flash 0.7441, GLM-5.3-Flash
 
 | Path | Content |
 |---|---|
-| `src/ontonorm/dgnorm/` | the 11 SDK modules: extraction, candidate delimitation, selection, short-circuit, evaluation, adapters, pipeline |
+| `src/ontonorm/dgnorm/` | the SDK modules: extraction, candidate delimitation, equality rule, constrained selection, evaluation, adapters, pipeline |
 | `src/ontonorm/tiers/`, `src/ontonorm/knowledge/`, `src/ontonorm/data/` | the minimal supporting modules imported by the SDK |
 | `verification/` | 112 gold sets, 112 final prediction sets, per-phrase selection records, short-circuit map, locked metrics |
 | `configs/dgnorm_csc.json` | the main configuration and locked counts |

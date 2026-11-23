@@ -5,8 +5,8 @@
   "extraction": "two output specifications of one instruction-tuned LLM, merged as a phrase union",
   "candidate_block_k": 20,
   "candidate_source": "SapBERT dense index over HPO labels and synonyms",
-  "selection": "source-sentence-injected constrained choice, one code or abstain per phrase",
-  "short_circuit": "deterministic equality-family rules inside each phrase's own candidate block",
+  "short_circuit": "deterministic equality-family rules inside each phrase's own candidate block; runs first and settles rule hits with no LLM call",
+  "selection": "source-sentence-injected constrained choice over the remaining phrases, one code or abstain per phrase",
   "metric": "strict corpus-level micro precision, recall and F1",
   "llm_endpoint": "DeepSeek 4.1 Flash, OpenAI-compatible chat completions",
   "locked_counts": {

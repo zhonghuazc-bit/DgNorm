@@ -11,14 +11,13 @@ from .dgnorm import (
     RagHpoAdapter,
     Bc8T3Adapter,
     GscAdapter,
-    ExactAnchorTier,
     NormDocument,
     DgnormRunResult,
 )
 
 __all__ = [
     "DgnormPipeline", "DgnormConfig", "DatasetAdapter",
-    "RagHpoAdapter", "Bc8T3Adapter", "GscAdapter", "ExactAnchorTier",
+    "RagHpoAdapter", "Bc8T3Adapter", "GscAdapter",
     "NormDocument", "DgnormRunResult",
 ]
 

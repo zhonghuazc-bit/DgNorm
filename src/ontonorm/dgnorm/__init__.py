@@ -10,12 +10,14 @@ Stages (each importable and independently reusable):
 
     dgnorm.extract       stage 1 -- dual extractors (flash + gen)
     dgnorm.retrieve      stage 2 -- SapBERT candidate delimitation
-    dgnorm.select        stage 3 -- source-sentence constrained selection
-    dgnorm.shortcircuit  stage 4 -- in-block equality-family short-circuit
+    dgnorm.shortcircuit  stage 3 -- in-block equality-family short-circuit
+    dgnorm.select        stage 4 -- source-sentence constrained selection
     dgnorm.evaluate      stage 5 -- corpus/observation micro
+
+The equality rule runs before selection: phrases whose code is fixed by the
+string are settled with no LLM call, and only misses reach the selector.
 """
 from .adapters import Bc8T3Adapter, DatasetAdapter, GscAdapter, RagHpoAdapter
-from .anchor import ExactAnchorTier
 from .pipeline import DgnormConfig, DgnormPipeline
 from .types import DgnormRunResult, NormDocument
 
@@ -26,7 +28,6 @@ __all__ = [
     "RagHpoAdapter",
     "Bc8T3Adapter",
     "GscAdapter",
-    "ExactAnchorTier",
     "NormDocument",
     "DgnormRunResult",
 ]

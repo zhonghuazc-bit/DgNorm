@@ -6,9 +6,13 @@ stages over those documents:
 
     1. extract   -- dual-granularity phrase extraction (flash + gen)
     2. retrieve  -- SapBERT candidate delimitation (top-K block per phrase)
-    3. select    -- source-sentence-injected constrained selection (mm8)
-    4. shortcut  -- in-block equality-family short-circuit (zero LLM)
+    3. shortcut  -- in-block equality-family short-circuit (zero LLM)
+    4. select    -- source-sentence-injected constrained selection (mm8)
     5. evaluate  -- corpus micro (and observation micro for BC8-T3 style)
+
+The equality rule runs first. Phrases whose code is fixed by the string are
+settled without an LLM call and never enter selection; only misses are sent
+to the constrained selector.
 
 Every stage is independently reusable (import the module, run it over
 any phrases/docs), and the paid stages checkpoint to jsonl so a rerun
@@ -28,7 +32,6 @@ from typing import Dict, List, Optional
 
 from ..tiers.llm_tier import LlmClient
 from .adapters import DatasetAdapter
-from .anchor import ExactAnchorTier
 from .caching import load_phrases_map, load_selection_map
 from .evaluate import evaluate, preds_from_selection
 from .extract import combine, extract_phrases
@@ -64,17 +67,6 @@ class DgnormConfig:
     sel_cache: Optional[str] = None
     k: int = 20
     resume: bool = True
-    # multi-code selection: one phrase may map to several HPO terms
-    # (mirrors dictionary matching; for corpora whose gold annotates
-    # several granularities of one finding, e.g. GSC). Default False keeps
-    # the mm8 single-code selection byte-identical.
-    select_multi: bool = False
-    # exact-surface anchor (only meaningful with select_multi=True):
-    # restrict the LLM multi-select to codes whose label/synonym matches
-    # the phrase verbatim in the full HPO library (FastHPOCR-style exact
-    # matching), curbing the free multi-select's false-positive explosion.
-    # Default False keeps the pipeline byte-identical.
-    exact_anchor: bool = False
 
     def _paths(self) -> Dict[str, Path]:
         base = Path(self.out_dir) / self.dataset
@@ -107,7 +99,17 @@ class DgnormPipeline:
 
     def run_selection(
         self, docs: List[NormDocument], phrases: Dict[str, List[str]],
+        short: Optional[Dict[str, str]] = None,
     ) -> Dict[str, dict]:
+        """Select codes for phrases not already settled by the equality rule.
+
+        short maps a phrase to the code fixed by the rule. Those phrases are
+        pre-filled into each document's selection map so the selector skips
+        them entirely: no candidate retrieval and no LLM call is paid for a
+        rule hit. The final prediction is still rebuilt by
+        preds_from_selection(selection, short), so a hit contributes its rule
+        code exactly as before.
+        """
         p = self.config._paths()
         # lazily load shared resources so a stage can run standalone
         if not hasattr(self, "hpo"):
@@ -116,10 +118,7 @@ class DgnormPipeline:
             self.index = CandidateIndex(self.config.index_npz,
                                         self.config.sapbert_dir)
         sel = SelectionTier(self.hpo, self.index, self.config.hpo_json,
-                            self.llm, k=self.config.k,
-                            multi=self.config.select_multi,
-                            anchor=ExactAnchorTier(self.hpo)
-                            if self.config.exact_anchor else None)
+                            self.llm, k=self.config.k)
         existing = load_selection_map(str(p["sel"])) if self.config.resume else {}
         out: Dict[str, dict] = dict(existing)
         fh = open(p["sel"], "a" if self.config.resume else "w", encoding="utf-8")
@@ -128,7 +127,10 @@ class DgnormPipeline:
         for i, d in enumerate(docs):
             if d.obs_id in out:
                 continue
-            mapping = sel.select_doc(d.text, phrases.get(d.obs_id, []))
+            doc_phrases = phrases.get(d.obs_id, [])
+            done = {ph: short[ph] for ph in doc_phrases
+                    if short and ph in short}
+            mapping = sel.select_doc(d.text, doc_phrases, done_map=done)
             out[d.obs_id] = mapping
             fh.write(json.dumps({"obs_id": d.obs_id, "map": mapping},
                                 ensure_ascii=False) + "\n")
@@ -145,7 +147,7 @@ class DgnormPipeline:
     ) -> Dict[str, str]:
         sc = ShortCircuitTier(self.config.index_npz, self.config.sapbert_dir,
                               k=self.config.k)
-        short, stats = sc.run(phrases, {})
+        short, stats = sc.run(phrases)
         self.shortcircuit_stats = stats
         return short
 
@@ -172,15 +174,15 @@ class DgnormPipeline:
         self.hpo = self._load_hpo(cfg.hpo_json)
         self.index = CandidateIndex(cfg.index_npz, cfg.sapbert_dir)
 
-        # 3) selection
-        selection = self.run_selection(docs, phrases)
-        print(f"[dgnorm] selection done for {len(selection)} docs", flush=True)
-
-        # 4) short-circuit
+        # 3) short-circuit first: rule hits are settled with zero LLM calls
         all_phrases = sorted({ph for v in phrases.values() for ph in v})
         short = self.run_shortcircuit(all_phrases)
         print(f"[dgnorm] short-circuited {len(short)}/{len(all_phrases)} phrases",
               flush=True)
+
+        # 4) selection: rule hits are skipped, only misses reach the LLM
+        selection = self.run_selection(docs, phrases, short=short)
+        print(f"[dgnorm] selection done for {len(selection)} docs", flush=True)
 
         # 5) evaluate
         gold = {d.obs_id: set(d.gold_terms) for d in docs}

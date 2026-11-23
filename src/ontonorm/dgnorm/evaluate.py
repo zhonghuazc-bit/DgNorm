@@ -20,7 +20,7 @@ prediction on a key-less document as a perfect observation.
 """
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Sequence, Set, Tuple
+from typing import Dict, Optional, Sequence
 
 
 def corpus_micro(
@@ -103,10 +103,12 @@ def preds_from_selection(
 ) -> Dict[str, set]:
     """Document-level prediction sets.
 
-    selection: {obs_id: {phrase: hpo_id_or_""}} (single mode) or
-               {obs_id: {phrase: [hpo_id, ...]}} (multi mode). A list
-               value expands to all of its codes.
-    shortcircuit_map: {phrase: hpo_id} overrides (or fills) the pick.
+    selection: {obs_id: {phrase: hpo_id_or_""}}; an empty string is an
+    abstention and contributes no code.
+    shortcircuit_map: {phrase: hpo_id} fixes the code for a rule hit. Hits
+    are pre-filled into selection and skipped by the LLM; this function
+    applies the same map at prediction time, so the output is invariant to
+    whether the rule ran before or after selection.
     """
     out: Dict[str, set] = {}
     for obs_id, mapping in selection.items():
@@ -114,9 +116,7 @@ def preds_from_selection(
         for ph, v in mapping.items():
             if shortcircuit_map and ph in shortcircuit_map:
                 v = shortcircuit_map[ph]
-            if isinstance(v, (list, tuple, set)):
-                pred.update(x for x in v if x)
-            elif v:
+            if v:
                 pred.add(v)
         out[obs_id] = pred
     return out
